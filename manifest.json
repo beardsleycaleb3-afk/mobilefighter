@@ -1,0 +1,31 @@
+{
+  "name": "Mobile Fighter — Wanderer x Elemental Strikers",
+  "short_name": "MobileFighter",
+  "description": "A touch-only mobile side-scrolling brawler: Wanderer's zone campaign combined with the Elemental Strikers (Rock Warrior, Vine Assassin), a combo tree, flame-on specials, and a VM-driven level generator.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a12",
+  "theme_color": "#ff9d3b",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

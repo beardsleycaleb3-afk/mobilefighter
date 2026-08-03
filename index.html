@@ -284,14 +284,53 @@ function tryDodge(dir){
 var GROUND_LINE = GROUND_Y;
 var zoneIndex=0;
 var stageCache = {};
-function loadStageImage(key, src){
+function loadStageImage(key, baseSrc){
   if (stageCache[key]) return stageCache[key];
-  var img = new Image();
-  var entry = { img: img, ready: false };
-  img.onload = function(){ entry.ready = true; };
-  img.onerror = function(){ entry.ready = false; };
-  img.src = src;
+  var entry = { baseImage: null, layerImages: [], ready: false };
   stageCache[key] = entry;
+
+  var baseSrcs = Array.isArray(baseSrc) ? baseSrc : [baseSrc];
+  var suffixes = ['', 'a', 'b', 'c', 'd', 'e', 'f'];
+  var exts = ['.png', '.jpeg', '.jpg'];
+  var pathIndex = 0;
+  var suffixIndex = 0;
+  var extIndex = 0;
+
+  function tryNext() {
+    if (pathIndex >= baseSrcs.length) {
+      entry.ready = !!(entry.baseImage || entry.layerImages.length);
+      return;
+    }
+    if (suffixIndex >= suffixes.length) {
+      suffixIndex = 0;
+      extIndex = 0;
+      pathIndex++;
+      return tryNext();
+    }
+    if (extIndex >= exts.length) {
+      extIndex = 0;
+      suffixIndex++;
+      return tryNext();
+    }
+    var suffix = suffixes[suffixIndex];
+    var img = new Image();
+    var src = baseSrcs[pathIndex] + suffix + exts[extIndex++];
+    img.onload = function() {
+      if (suffix === '') {
+        entry.baseImage = img;
+      } else {
+        entry.layerImages.push({ suffix: suffix, img: img });
+      }
+      entry.ready = true;
+      tryNext();
+    };
+    img.onerror = function() {
+      tryNext();
+    };
+    img.src = src;
+  }
+
+  tryNext();
   return entry;
 }
 
@@ -390,7 +429,12 @@ function buildZone(idx){
   levelLen=z.len; camX=0;
   player.x=60; player.y=GROUND_Y; player.vx=0; player.vy=0; player.state='idle';
   enemies=[]; hazards=[]; flamesList=[];
-  if (z.stage){ z.stageAsset = loadStageImage(z.stage, 'assets/sprites/stages/' + z.stage + '.png'); }
+  if (z.stage){
+    z.stageAsset = loadStageImage(z.stage, [
+      'assets/sprites/stages/' + z.stage,
+      'asdets/sprites/stages/' + z.stage
+    ]);
+  }
   vm = makeVM(cascade(idx+3, 41) % 256); // deterministic per-zone seed via Cascade Algebra
   var spacing = levelLen/(z.enemies+1);
   var kinds = ['normal','rusher','bruiser','thrower'];
@@ -901,7 +945,13 @@ function bakeBackgroundOffscreen(z){
 }
 function drawBackground(z){
   if (z.stageAsset && z.stageAsset.ready){
-    ctx.drawImage(z.stageAsset.img, 0, 0, W, H);
+    if (z.stageAsset.baseImage) {
+      ctx.drawImage(z.stageAsset.baseImage, 0, 0, W, H);
+    } else {
+      z.stageAsset.layerImages.forEach(function(layer){
+        ctx.drawImage(layer.img, 0, 0, W, H);
+      });
+    }
     return;
   }
   if (bakedZoneKey !== z.name) bakeBackgroundOffscreen(z);

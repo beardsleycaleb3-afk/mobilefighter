@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=300, height=500, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>WANDERER × ELEMENTAL STRIKERS</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff9d3b">
@@ -14,10 +14,11 @@
 <link rel="icon" href="icons/icon-192.png">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none; touch-action:none; }
-  html,body { width:300px; height:500px; overflow:hidden; background:#0a0a12; font-family:'Courier New', monospace; }
-  #wrap { position:relative; width:300px; height:500px; overflow:hidden; }
-  canvas { position:absolute; top:0; left:0; image-rendering:pixelated; image-rendering:crisp-edges; }
-  #ui { position:absolute; top:0; left:0; width:300px; height:500px; pointer-events:none; }
+  html,body { min-height:100dvh; min-width:100dvw; overflow:hidden; background:#0a0a12; font-family:'Courier New', monospace; display:flex; align-items:center; justify-content:center; }
+  body { margin:0; }
+  #wrap { position:relative; width:330px; height:550px; max-width:100dvw; max-height:100dvh; overflow:hidden; touch-action:none; }
+  canvas { position:absolute; top:0; left:0; width:100%; height:100%; image-rendering:pixelated; image-rendering:crisp-edges; }
+  #ui { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
   .btn { position:absolute; pointer-events:auto; display:flex; align-items:center; justify-content:center;
          color:#fff; font-weight:bold; font-family:'Courier New',monospace; user-select:none;
          border:2px solid rgba(255,255,255,0.35); border-radius:50%; background:rgba(20,20,30,0.55);
@@ -43,7 +44,7 @@
   #score { color:#ffe37a; font-size:8px; text-shadow:1px 1px 0 #000; }
   #lvlLabel { color:#8dfff0; font-size:8px; text-shadow:1px 1px 0 #000; }
   #zoneLabel { color:#9ad; font-size:8px; text-shadow:1px 1px 0 #000; }
-  #msgOverlay { position:absolute; top:0; left:0; width:300px; height:500px; background:rgba(5,5,10,0.92);
+  #msgOverlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,10,0.92);
                 display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;
                 text-align:center; pointer-events:auto; z-index:10; padding:10px; }
   #msgOverlay h1 { color:#ff9d3b; font-size:18px; text-shadow:2px 2px 0 #000; margin-bottom:4px; letter-spacing:1px; }
@@ -55,9 +56,9 @@
               border:1px solid rgba(255,255,255,0.3); border-radius:5px; padding:6px 9px; margin-bottom:6px; font-size:9px; }
   .shopBtn { background:#3bafff; border:1px solid #fff; border-radius:4px; color:#001; font-size:8px; padding:4px 7px; font-weight:bold; }
   .hidden { display:none !important; }
-  #toast { position:absolute; top:58px; left:0; width:300px; text-align:center; color:#ffe37a;
+  #toast { position:absolute; top:58px; left:0; width:100%; text-align:center; color:#ffe37a;
            font-size:11px; text-shadow:2px 2px 0 #000; pointer-events:none; opacity:0; transition:opacity .3s; z-index:5;}
-  #bossCard { position:absolute; top:0; left:0; width:300px; height:500px; background:rgba(5,5,10,0.85);
+  #bossCard { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,10,0.85);
               display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:8; pointer-events:none; opacity:0; transition:opacity .3s;}
   #bossCard h1{ color:#ff4040; font-size:20px; text-shadow:2px 2px 0 #000; letter-spacing:2px;}
   #bossCard h2{ color:#fff; font-size:10px; margin-top:6px;}
@@ -65,7 +66,7 @@
 </head>
 <body>
 <div id="wrap">
-  <canvas id="game" width="300" height="500"></canvas>
+  <canvas id="game" width="330" height="550"></canvas>
   <div id="toast"></div>
   <div id="bossCard"><h1 id="bossName">BOSS</h1><h2 id="bossSub">subtitle</h2></div>
   <div id="ui">
@@ -183,9 +184,22 @@ function sfxBoss(){beep(60,0.4,'sawtooth',0.1);}
 // ================= Canvas =================
 var canvas = document.getElementById('game');
 var ctx = canvas.getContext('2d');
-ctx.imageSmoothingEnabled = true;
-var W=300, H=500;
-var GROUND_Y = 380;
+var W=330, H=550;
+var GROUND_Y = 420;
+var dpr = Math.min(4, window.devicePixelRatio || 1);
+function resizeCanvas(){
+  dpr = Math.min(4, window.devicePixelRatio || 1);
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  if (typeof ctx.webkitImageSmoothingEnabled !== 'undefined') ctx.webkitImageSmoothingEnabled = false;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas, {passive:true});
+window.addEventListener('orientationchange', resizeCanvas, {passive:true});
 
 // ================= Input — TOUCH ONLY (no mouse, no keyboard, no desktop fallback) =================
 var keys = { left:false,right:false,jump:false,punch:false,kick:false,special:false };
@@ -269,13 +283,25 @@ function tryDodge(dir){
 // ================= Zones — enemy mix now includes Elemental Strikers =================
 var GROUND_LINE = GROUND_Y;
 var zoneIndex=0;
+var stageCache = {};
+function loadStageImage(key, src){
+  if (stageCache[key]) return stageCache[key];
+  var img = new Image();
+  var entry = { img: img, ready: false };
+  img.onload = function(){ entry.ready = true; };
+  img.onerror = function(){ entry.ready = false; };
+  img.src = src;
+  stageCache[key] = entry;
+  return entry;
+}
+
 var ZONES = [
-  { name:"ZONE 1 — ROADSIDE", len:1300, enemies:3, gems:6, bg:"#1c2436", far:"#2b3550", near:"#171a24", boss:null },
-  { name:"ZONE 2 — RUST YARD", len:1450, enemies:4, gems:6, bg:"#2a1f1c", far:"#4a2f24", near:"#1a1512", boss:null },
-  { name:"ZONE 3 — STONE PASS", len:1600, enemies:4, gems:7, bg:"#241407", far:"#3a2410", near:"#1a0e05", boss:{ el:'rock', sub:"Keeper of the Stone Pass" } },
-  { name:"ZONE 4 — NEON MARKET", len:1700, enemies:5, gems:7, bg:"#241426", far:"#40224a", near:"#160c18", boss:null },
-  { name:"ZONE 5 — THORN HOLLOW", len:1850, enemies:5, gems:8, bg:"#160a24", far:"#2a1240", near:"#0d0618", boss:null },
-  { name:"ZONE 6 — ROAD'S END", len:2000, enemies:3, gems:9, bg:"#200a0a", far:"#441414", near:"#140505", boss:{ el:'vine', sub:"What waits at the road's end" } }
+  { name:"ZONE 1 — ROADSIDE", len:1300, enemies:3, gems:6, bg:"#1c2436", far:"#2b3550", near:"#171a24", stage:'zone1', boss:null },
+  { name:"ZONE 2 — RUST YARD", len:1450, enemies:4, gems:6, bg:"#2a1f1c", far:"#4a2f24", near:"#1a1512", stage:'zone2', boss:null },
+  { name:"ZONE 3 — STONE PASS", len:1600, enemies:4, gems:7, bg:"#241407", far:"#3a2410", near:"#1a0e05", stage:'zone3', boss:{ el:'rock', sub:"Keeper of the Stone Pass" } },
+  { name:"ZONE 4 — NEON MARKET", len:1700, enemies:5, gems:7, bg:"#241426", far:"#40224a", near:"#160c18", stage:'zone4', boss:null },
+  { name:"ZONE 5 — THORN HOLLOW", len:1850, enemies:5, gems:8, bg:"#160a24", far:"#2a1240", near:"#0d0618", stage:'zone5', boss:null },
+  { name:"ZONE 6 — ROAD'S END", len:2000, enemies:3, gems:9, bg:"#200a0a", far:"#441414", near:"#140505", stage:'zone6', boss:{ el:'vine', sub:"What waits at the road's end" } }
 ];
 
 // ================= 018810 OMNIS: QDBP GENETIC ROM + Cascade Algebra VM =================
@@ -364,6 +390,7 @@ function buildZone(idx){
   levelLen=z.len; camX=0;
   player.x=60; player.y=GROUND_Y; player.vx=0; player.vy=0; player.state='idle';
   enemies=[]; hazards=[]; flamesList=[];
+  if (z.stage){ z.stageAsset = loadStageImage(z.stage, 'assets/sprites/stages/' + z.stage + '.png'); }
   vm = makeVM(cascade(idx+3, 41) % 256); // deterministic per-zone seed via Cascade Algebra
   var spacing = levelLen/(z.enemies+1);
   var kinds = ['normal','rusher','bruiser','thrower'];
@@ -873,6 +900,10 @@ function bakeBackgroundOffscreen(z){
   bakedZoneKey = z.name;
 }
 function drawBackground(z){
+  if (z.stageAsset && z.stageAsset.ready){
+    ctx.drawImage(z.stageAsset.img, 0, 0, W, H);
+    return;
+  }
   if (bakedZoneKey !== z.name) bakeBackgroundOffscreen(z);
   var g = ctx.createLinearGradient(0,0,0,H);
   g.addColorStop(0,z.bg); g.addColorStop(1,'#05050a');

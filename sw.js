@@ -1,7 +1,7 @@
 // Mobile Fighter — service worker
-// Cache-first strategy: the whole game is one self-contained index.html (sprites are
-// base64-embedded), so caching just the app shell is enough for full offline play.
-const CACHE_NAME = 'mobilefighter-cache-v1';
+// Cache-first strategy: the app shell is pre-cached, while stage artwork is loaded
+// on demand from /assets/sprites/stages and cached dynamically during gameplay.
+const CACHE_NAME = 'mobilefighter-cache-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
